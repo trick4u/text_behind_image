@@ -64,7 +64,7 @@ class ImageSegmentationController extends GetxController {
   final RxList<TextData> textWidgets = <TextData>[].obs;
   final RxBool isInitialized = false.obs;
   final RxDouble fontSize = 30.0.obs; // Added font size observable
-  
+  final RxInt selectedTextIndex = (-1).obs; // Add this line
 
   final GlobalKey _repaintBoundaryKey = GlobalKey();
   final GlobalKey _saveRepaintBoundaryKey =

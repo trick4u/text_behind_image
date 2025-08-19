@@ -101,7 +101,6 @@ class OpacityControlsWidget extends StatelessWidget {
                                             : 'Sample Text',
                                         style: fontController.getFontStyle(
                                           font,
-                                          // fontSize: controller.fontSize.value,
                                         ),
                                       ),
                                       onTap: () {
@@ -139,11 +138,43 @@ class OpacityControlsWidget extends StatelessWidget {
           ),
           Row(
             children: [
+              const Text("Select Text:"),
+              const SizedBox(width: 10),
+              Obx(
+                () => DropdownButton<int>(
+                  value: controller.selectedTextIndex.value >= 0 &&
+                          controller.selectedTextIndex.value < controller.textWidgets.length
+                      ? controller.selectedTextIndex.value
+                      : null,
+                  hint: const Text("Select a text"),
+                  items: controller.textWidgets.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final textData = entry.value;
+                    return DropdownMenuItem<int>(
+                      value: index,
+                      child: Text(
+                        textData.text.value.isEmpty ? "Text ${index + 1}" : textData.text.value,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.selectedTextIndex.value = value;
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
               const Text("Text Color:"),
               const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () {
-                  if (controller.textWidgets.isNotEmpty) {
+                  if (controller.textWidgets.isNotEmpty && controller.selectedTextIndex.value >= 0) {
+                    selectedColor.value = controller.textWidgets[controller.selectedTextIndex.value].color.value;
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -153,10 +184,8 @@ class OpacityControlsWidget extends StatelessWidget {
                             pickerColor: selectedColor.value,
                             onColorChanged: (color) {
                               selectedColor.value = color;
-                              // Update color for all text widgets
-                              for (var i = 0; i < controller.textWidgets.length; i++) {
-                                controller.textWidgets[i].color.value = color;
-                              }
+                              // Update color for the selected text widget only
+                              controller.textWidgets[controller.selectedTextIndex.value].color.value = color;
                             },
                             showLabel: true,
                             pickerAreaHeightPercent: 0.8,
@@ -173,7 +202,7 @@ class OpacityControlsWidget extends StatelessWidget {
                       ),
                     );
                   } else {
-                    Get.snackbar('No Text', 'Add a text widget first');
+                    Get.snackbar('No Text', 'Select a text widget first');
                   }
                 },
                 child: const Text('Pick Color'),
