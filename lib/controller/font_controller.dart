@@ -76,9 +76,10 @@ class FontController extends GetxController {
   double getFontSize(int index) {
     return fontSizes[index] ?? defaultFontSize;
   }
+  
 
   // Get TextStyle for a given font
-  TextStyle getFontStyle(String fontName, {double fontSize = 20}) {
+  TextStyle getFontStyle(String fontName, {double fontSize = 30}) {
     switch (fontName) {
       case 'Open Sans':
         return GoogleFonts.openSans(fontSize: fontSize, color: Colors.white);

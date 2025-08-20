@@ -131,11 +131,10 @@ class ImageSegmentationController extends GetxController {
     }
   }
 
-  void updateFontSize(double size) {
-    fontSize.value = size.clamp(
-      20.0,
-      100.0,
-    ); // Clamp font size between 10 and 40
+void updateFontSize(double size) {
+    if (selectedTextIndex.value >= 0 && selectedTextIndex.value < textWidgets.length) {
+      textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(20.0, 100.0);
+    }
   }
 
   Future<void> saveImage() async {

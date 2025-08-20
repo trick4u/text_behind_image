@@ -13,10 +13,10 @@ import '../models/text_model.dart';
 
 class MovableTextWidget extends StatelessWidget {
   final int index;
-  final bool hideControls; // New parameter to hide controls for saving
-  
+  final bool hideControls;
+
   const MovableTextWidget({
-    super.key, 
+    super.key,
     required this.index,
     this.hideControls = false,
   });
@@ -28,7 +28,6 @@ class MovableTextWidget extends StatelessWidget {
     final fontController = Get.find<FontController>();
 
     return Obx(() {
-      // Ensure index is valid
       if (index >= controller.textWidgets.length) {
         return const SizedBox.shrink();
       }
@@ -39,31 +38,48 @@ class MovableTextWidget extends StatelessWidget {
         left: textData.xPos.value,
         top: textData.yPos.value,
         child: GestureDetector(
-          onPanUpdate: hideControls ? null : (details) {
-            controller.updatePosition(index, details.delta.dx, details.delta.dy);
-          },
+          onPanUpdate: hideControls
+              ? null
+              : (details) {
+                  controller.updatePosition(index, details.delta.dx,
+                      details.delta.dy);
+                },
+          onDoubleTap: hideControls
+              ? null
+              : () {
+                  controller.selectedTextIndex.value = index;
+                },
+                onLongPress: hideControls
+                    ? null
+                    : () {
+                         controller.selectedTextIndex.value = index;
+                      },
           child: Container(
-            padding: hideControls ? EdgeInsets.zero : const EdgeInsets.all(8),
-            // Add a subtle background to make text more visible behind the image
-            decoration: hideControls ? null : BoxDecoration(
-              color: Colors.black.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: hideControls 
+            padding:
+                hideControls ? EdgeInsets.zero : const EdgeInsets.all(8),
+            decoration: hideControls
+                ? null
+                : BoxDecoration(
+                    color: Colors.black.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+            child: hideControls
                 ? _buildTextOnly(textData, controller, fontController)
-                : _buildTextWithControls(textData, controller, fontController, context),
+                : _buildTextWithControls(
+                    textData, controller, fontController, context),
           ),
         ),
       );
     });
   }
 
-  Widget _buildTextOnly(TextData textData, ImageSegmentationController controller, FontController fontController) {
+  Widget _buildTextOnly(TextData textData,
+      ImageSegmentationController controller, FontController fontController) {
     return Text(
       textData.text.value,
       style: fontController.getFontStyle(textData.font.value).copyWith(
         color: textData.color.value,
-        fontSize: controller.fontSize.value,
+        fontSize: textData.fontSize.value,
         fontWeight: FontWeight.bold,
         shadows: [
           Shadow(
@@ -87,7 +103,11 @@ class MovableTextWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildTextWithControls(TextData textData, ImageSegmentationController controller, FontController fontController, BuildContext context) {
+  Widget _buildTextWithControls(
+      TextData textData,
+      ImageSegmentationController controller,
+      FontController fontController,
+      BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -96,7 +116,6 @@ class MovableTextWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Delete button with better visibility
             Container(
               decoration: BoxDecoration(
                 color: Colors.red.withOpacity(0.8),
@@ -117,7 +136,6 @@ class MovableTextWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Text input with better contrast for "behind image" effect
             Container(
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.6,
@@ -129,9 +147,8 @@ class MovableTextWidget extends StatelessWidget {
                 onChanged: (newText) => controller.updateText(index, newText),
                 style: fontController.getFontStyle(textData.font.value).copyWith(
                   color: textData.color.value,
-                  fontSize: controller.fontSize.value,
+                  fontSize: textData.fontSize.value,
                   fontWeight: FontWeight.bold,
-                  // Enhanced shadows for better visibility behind foreground
                   shadows: [
                     Shadow(
                       blurRadius: 2.0,
@@ -156,7 +173,7 @@ class MovableTextWidget extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: null, // Allow multi-line text
+                maxLines: null,
               ),
             ),
           ],
