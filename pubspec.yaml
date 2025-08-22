@@ -44,6 +44,8 @@ dependencies:
   permission_handler: ^11.3.1
   share_plus: ^11.1.0
   path_provider: ^2.1.5
+  flutter_native_splash: ^2.4.6
+  icons_launcher: ^3.0.1
  
   
  
@@ -100,3 +102,18 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/logo.png"
+  android: true
+  ios: true
+  android_gravity: center
+  ios_content_mode: scaleAspectFit
+
+icons_launcher:
+  image_path: "assets/logo.png"
+  platforms:
+    android:
+      enable: true
+    ios:
+      enable: true  
