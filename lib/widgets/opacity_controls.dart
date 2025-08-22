@@ -20,43 +20,83 @@ class OpacityControlsWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-          Obx(() => Row(
-                children: [
-                  const Text("Font Size:"),
-                  Expanded(
-                    child: Slider(
-                      value: controller.selectedTextIndex.value >= 0 &&
-                              controller.selectedTextIndex.value <
-                                  controller.textWidgets.length
-                          ? controller
+          Obx(
+            () => Row(
+              children: [
+                const Icon(Icons.format_size),
+                Expanded(
+                  child: Slider(
+                    value:
+                        controller.selectedTextIndex.value >= 0 &&
+                            controller.selectedTextIndex.value <
+                                controller.textWidgets.length
+                        ? controller
                               .textWidgets[controller.selectedTextIndex.value]
                               .fontSize
                               .value
-                          : 30.0,
-                      onChanged: controller.selectedTextIndex.value >= 0
-                          ? controller.updateFontSize
-                          : null,
-                      min: 10.0,
-                      max: 100.0,
-                      divisions: 30,
-                      label: controller.selectedTextIndex.value >= 0 &&
-                              controller.selectedTextIndex.value <
-                                  controller.textWidgets.length
-                          ? controller
+                        : 30.0,
+                    onChanged: controller.selectedTextIndex.value >= 0
+                        ? controller.updateFontSize
+                        : null,
+                    min: 10.0,
+                    max: 200.0,
+                    divisions: 20,
+                    label:
+                        controller.selectedTextIndex.value >= 0 &&
+                            controller.selectedTextIndex.value <
+                                controller.textWidgets.length
+                        ? controller
                               .textWidgets[controller.selectedTextIndex.value]
                               .fontSize
                               .value
                               .round()
                               .toString()
-                          : '30',
-                    ),
+                        : '30',
                   ),
-                ],
-              )),
+                ),
+              ],
+            ),
+          ),
+          Obx(
+            () => Row(
+              children: [
+                const Icon(Icons.opacity),
+                Expanded(
+                  child: Slider(
+                    value:
+                        controller.selectedTextIndex.value >= 0 &&
+                            controller.selectedTextIndex.value <
+                                controller.textWidgets.length
+                        ? controller
+                              .textWidgets[controller.selectedTextIndex.value]
+                              .opacity
+                              .value
+                        : 1.0,
+                    onChanged: controller.selectedTextIndex.value >= 0
+                        ? (value) => controller.updateTextOpacity(value)
+                        : null,
+                    min: 0.0,
+                    max: 1.0,
+                    divisions: 100,
+                    label:
+                        controller.selectedTextIndex.value >= 0 &&
+                            controller.selectedTextIndex.value <
+                                controller.textWidgets.length
+                        ? controller
+                              .textWidgets[controller.selectedTextIndex.value]
+                              .opacity
+                              .value
+                              .toStringAsFixed(1)
+                        : '1.0',
+                  ),
+                ),
+              ],
+            ),
+          ),
+    
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Change Font:"),
-              const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () {
                   if (controller.textWidgets.isNotEmpty) {
@@ -87,8 +127,8 @@ class OpacityControlsWidget extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 10),
                                     Obx(() {
-                                      final textData = controller
-                                              .textWidgets.isNotEmpty
+                                      final textData =
+                                          controller.textWidgets.isNotEmpty
                                           ? controller.textWidgets[0]
                                           : null;
                                       return Text(
@@ -98,15 +138,7 @@ class OpacityControlsWidget extends StatelessWidget {
                                         style: fontController.getFontStyle(
                                           textData?.font.value ??
                                               fontController.defaultFont,
-                                          fontSize: controller
-                                                  .selectedTextIndex.value >=
-                                              0
-                                              ? controller
-                                                  .textWidgets[controller
-                                                      .selectedTextIndex.value]
-                                                  .fontSize
-                                                  .value
-                                              : 30.0,
+                                          fontSize: 30.0,
                                         ),
                                       );
                                     }),
@@ -115,29 +147,40 @@ class OpacityControlsWidget extends StatelessWidget {
                               ),
                               Expanded(
                                 child: ListView.builder(
-                                  itemCount: fontController.availableFonts.length,
+                                  itemCount:
+                                      fontController.availableFonts.length,
                                   itemBuilder: (context, fontIndex) {
-                                    final font =
-                                        fontController.availableFonts[fontIndex];
+                                    final font = fontController
+                                        .availableFonts[fontIndex];
                                     return ListTile(
                                       title: Text(
                                         controller.textWidgets.isNotEmpty
-                                            ? controller.textWidgets[0].text
-                                                    .value.isEmpty
-                                                ? 'Sample Text'
-                                                : controller
-                                                    .textWidgets[0].text.value
+                                            ? controller
+                                                      .textWidgets[0]
+                                                      .text
+                                                      .value
+                                                      .isEmpty
+                                                  ? 'Sample Text'
+                                                  : controller
+                                                        .textWidgets[0]
+                                                        .text
+                                                        .value
                                             : 'Sample Text',
                                         style: fontController.getFontStyle(
                                           font,
-                                          fontSize:  30.0,
+                                          fontSize: 30.0,
                                         ),
                                       ),
                                       onTap: () {
-                                        for (var i = 0;
-                                            i < controller.textWidgets.length;
-                                            i++) {
-                                          fontController.setSelectedFont(i, font);
+                                        for (
+                                          var i = 0;
+                                          i < controller.textWidgets.length;
+                                          i++
+                                        ) {
+                                          fontController.setSelectedFont(
+                                            i,
+                                            font,
+                                          );
                                           controller.textWidgets[i].font.value =
                                               font;
                                         }
@@ -165,14 +208,9 @@ class OpacityControlsWidget extends StatelessWidget {
                     Get.snackbar('No Text', 'Add a text widget first');
                   }
                 },
-                child: const Text('Select Font'),
+                child: const Icon(Icons.font_download),
               ),
-            ],
-          ),
-          Row(
-            children: [
-              const Text("Text Color:"),
-              const SizedBox(width: 10),
+
               ElevatedButton(
                 onPressed: () {
                   if (controller.textWidgets.isNotEmpty &&
@@ -191,9 +229,12 @@ class OpacityControlsWidget extends StatelessWidget {
                             onColorChanged: (color) {
                               selectedColor.value = color;
                               controller
-                                  .textWidgets[controller.selectedTextIndex.value]
-                                  .color
-                                  .value = color;
+                                      .textWidgets[controller
+                                          .selectedTextIndex
+                                          .value]
+                                      .color
+                                      .value =
+                                  color;
                             },
                             showLabel: true,
                             pickerAreaHeightPercent: 0.8,
@@ -213,7 +254,7 @@ class OpacityControlsWidget extends StatelessWidget {
                     Get.snackbar('No Text', 'Select a text widget first');
                   }
                 },
-                child: const Text('Pick Color'),
+                child: const Icon(Icons.color_lens),
               ),
             ],
           ),

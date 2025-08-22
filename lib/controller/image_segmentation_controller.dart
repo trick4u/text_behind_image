@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -10,7 +11,9 @@ import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/text_model.dart';
 
@@ -61,6 +64,7 @@ class ImageSegmentationController extends GetxController {
   final RxString text = "Hello".obs;
   final RxBool isProcessing = false.obs;
   final RxBool isSaving = false.obs;
+   final RxBool isSharing = false.obs;
   final RxList<TextData> textWidgets = <TextData>[].obs;
   final RxBool isInitialized = false.obs;
   final RxDouble fontSize = 30.0.obs; // Added font size observable
@@ -133,33 +137,103 @@ class ImageSegmentationController extends GetxController {
 
 void updateFontSize(double size) {
     if (selectedTextIndex.value >= 0 && selectedTextIndex.value < textWidgets.length) {
-      textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(20.0, 100.0);
+      textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(20.0, 200.0);
     }
   }
+  void updateTextOpacity(double opacity) {
+  if (selectedTextIndex.value >= 0 && selectedTextIndex.value < textWidgets.length) {
+    textWidgets[selectedTextIndex.value].opacity.value = opacity.clamp(0.0, 1.0);
+  }
+}
 
-  Future<void> saveImage() async {
+//blur the background
+
+
+Future<void> saveImage() async {
+  if (original.value == null) {
+    Get.snackbar('Error', 'No image to save');
+    return;
+  }
+
+  try {
+    isSaving.value = true;
+
+    // Check permission status before requesting
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      // Request permission only if not already granted
+      status = await Permission.storage.request();
+      if (!status.isGranted) {
+        Get.snackbar(
+          'Permission Denied',
+          'Storage permission is required to save images',
+        );
+        return;
+      }
+    }
+
+    // Ensure the RepaintBoundary widget is rendered
+    if (_saveRepaintBoundaryKey.currentContext == null) {
+      Get.snackbar('Error', 'Cannot save image: Widget not ready');
+      return;
+    }
+
+    // Capture the RepaintBoundary as an image
+    final RenderRepaintBoundary boundary =
+        _saveRepaintBoundaryKey.currentContext!.findRenderObject()
+            as RenderRepaintBoundary;
+
+    final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+
+    if (byteData != null) {
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      // Save to gallery
+      final result = await ImageGallerySaverPlus.saveImage(
+        pngBytes,
+        quality: 100,
+        name: "text_behind_image_${DateTime.now().millisecondsSinceEpoch}",
+      );
+
+      if (result['isSuccess'] == true) {
+        Get.snackbar(
+          'Success',
+          'Image saved to gallery!',
+          backgroundColor: Colors.green.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar('Error', 'Failed to save image: ${result['error']}');
+        print('Error saving image: ${result['error']}');
+      }
+    } else {
+      Get.snackbar('Error', 'Failed to capture image data');
+    }
+  } catch (e) {
+    Get.snackbar('Error', 'Failed to save image: ${e.toString()}');
+    print('Error saving image: $e');
+  } finally {
+    isSaving.value = false;
+  }
+}
+
+Future<void> shareImage() async {
     if (original.value == null) {
-      Get.snackbar('Error', 'No image to save');
+      Get.snackbar('Error', 'No image to share');
       return;
     }
 
     try {
-      isSaving.value = true;
+      isSharing.value = true;
 
-      // Request storage permission
-      var status = await Permission.storage.status;
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-        if (!status.isGranted) {
-          Get.snackbar(
-            'Permission Denied',
-            'Storage permission is required to save images',
-          );
-          return;
-        }
+      if (_saveRepaintBoundaryKey.currentContext == null) {
+        Get.snackbar('Error', 'Cannot share image: Widget not ready');
+        return;
       }
 
-      // Capture the RepaintBoundary as an image
       final RenderRepaintBoundary boundary =
           _saveRepaintBoundaryKey.currentContext!.findRenderObject()
               as RenderRepaintBoundary;
@@ -172,31 +246,48 @@ void updateFontSize(double size) {
       if (byteData != null) {
         final Uint8List pngBytes = byteData.buffer.asUint8List();
 
-        // Save to gallery
-        final result = await ImageGallerySaverPlus.saveImage(
-          pngBytes,
-          quality: 100,
-          name: "text_behind_image_${DateTime.now().millisecondsSinceEpoch}",
+        // Save to temporary file for sharing
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File(
+            '${tempDir.path}/text_behind_image_${DateTime.now().millisecondsSinceEpoch}.png');
+        await tempFile.writeAsBytes(pngBytes);
+
+        ShareParams(
+          files: [XFile(tempFile.path)],
+          text: 'Check out my edited image!',
         );
 
-        if (result['isSuccess'] == true) {
+        // Share the image
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(tempFile.path)],
+            text: 'Check out my edited image!',
+          ),
+        ).then((_) {
+          // Clean up temporary file
+           tempFile.delete();
+        }).then((_) {
           Get.snackbar(
             'Success',
-            'Image saved to gallery!',
+            'Image shared successfully!',
             backgroundColor: Colors.green.withOpacity(0.8),
             colorText: Colors.white,
           );
-        } else {
-          Get.snackbar('Error', 'Failed to save image');
-        }
+        }).catchError((error) {
+          Get.snackbar('Error', 'Failed to share image: $error');
+          print('Error sharing image: $error');
+        });
+  
+      } else {
+        Get.snackbar('Error', 'Failed to capture image data');
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save image: ${e.toString()}');
+      Get.snackbar('Error', 'Failed to share image: ${e.toString()}');
+      print('Error sharing image: $e');
     } finally {
-      isSaving.value = false;
+      isSharing.value = false;
     }
   }
-
   // Methods
   Future<void> pickImage() async {
     try {

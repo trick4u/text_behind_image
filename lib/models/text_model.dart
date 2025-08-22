@@ -10,6 +10,7 @@ class TextData {
   final RxString font;
   final Rx<Color> color; // Add this
    final RxDouble fontSize;
+   final RxDouble opacity;
   TextData({
     required String initialText,
     required double initialX,
@@ -17,10 +18,12 @@ class TextData {
     String initialFont = 'Roboto',
     Color initialColor = Colors.white, // Add default color
      double initialFontSize = 30.0,
+     double initialOpacity = 1.0,
   })  : text = initialText.obs,
         xPos = initialX.obs,
         yPos = initialY.obs,
         font = initialFont.obs,
         color = initialColor.obs, // Initialize color
-        fontSize = initialFontSize.obs; // Initialize fontSize
+        fontSize = initialFontSize.obs, // Initialize fontSize
+        opacity = initialOpacity.obs; // Initialize opacity
 }

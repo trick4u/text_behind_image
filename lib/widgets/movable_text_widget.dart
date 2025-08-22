@@ -41,144 +41,130 @@ class MovableTextWidget extends StatelessWidget {
           onPanUpdate: hideControls
               ? null
               : (details) {
-                  controller.updatePosition(index, details.delta.dx,
-                      details.delta.dy);
+                  controller.updatePosition(
+                    index,
+                    details.delta.dx,
+                    details.delta.dy,
+                  );
                 },
           onDoubleTap: hideControls
               ? null
               : () {
                   controller.selectedTextIndex.value = index;
                 },
-                onLongPress: hideControls
-                    ? null
-                    : () {
-                         controller.selectedTextIndex.value = index;
-                      },
+          onLongPress: hideControls
+              ? null
+              : () {
+                  controller.removeTextWidget(index);
+                },
           child: Container(
-            padding:
-                hideControls ? EdgeInsets.zero : const EdgeInsets.all(8),
-            decoration: hideControls
-                ? null
-                : BoxDecoration(
-                    color: Colors.black.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+           
+      
+            
             child: hideControls
                 ? _buildTextOnly(textData, controller, fontController)
                 : _buildTextWithControls(
-                    textData, controller, fontController, context),
+                    textData,
+                    controller,
+                    fontController,
+                    context,
+                  ),
           ),
         ),
       );
     });
   }
 
-  Widget _buildTextOnly(TextData textData,
-      ImageSegmentationController controller, FontController fontController) {
-    return Text(
-      textData.text.value,
-      style: fontController.getFontStyle(textData.font.value).copyWith(
-        color: textData.color.value,
-        fontSize: textData.fontSize.value,
-        fontWeight: FontWeight.bold,
-        shadows: [
-          Shadow(
-            blurRadius: 2.0,
-            color: Colors.black.withOpacity(0.9),
-            offset: const Offset(1.0, 1.0),
-          ),
-          Shadow(
-            blurRadius: 4.0,
-            color: Colors.black.withOpacity(0.7),
-            offset: const Offset(2.0, 2.0),
-          ),
-          Shadow(
-            blurRadius: 8.0,
-            color: Colors.black.withOpacity(0.5),
-            offset: const Offset(3.0, 3.0),
-          ),
-        ],
+  Widget _buildTextOnly(
+    TextData textData,
+    ImageSegmentationController controller,
+    FontController fontController,
+  ) {
+    return Opacity(
+      opacity: textData.opacity.value,
+      child: Text(
+        textData.text.value,
+        style: fontController
+            .getFontStyle(textData.font.value)
+            .copyWith(
+              color: textData.color.value,
+              fontSize: textData.fontSize.value,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  blurRadius: 2.0,
+                  color: Colors.black.withOpacity(0.9),
+                  offset: const Offset(1.0, 1.0),
+                ),
+                Shadow(
+                  blurRadius: 4.0,
+                  color: Colors.black.withOpacity(0.7),
+                  offset: const Offset(2.0, 2.0),
+                ),
+                Shadow(
+                  blurRadius: 8.0,
+                  color: Colors.black.withOpacity(0.5),
+                  offset: const Offset(3.0, 3.0),
+                ),
+              ],
+            ),
+        textAlign: TextAlign.center,
       ),
-      textAlign: TextAlign.center,
     );
   }
 
   Widget _buildTextWithControls(
-      TextData textData,
-      ImageSegmentationController controller,
-      FontController fontController,
-      BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
-                ),
-                onPressed: () => controller.removeTextWidget(index),
-                constraints: const BoxConstraints(
-                  minWidth: 24,
-                  minHeight: 24,
-                ),
-                padding: EdgeInsets.zero,
-              ),
+    TextData textData,
+    ImageSegmentationController controller,
+    FontController fontController,
+    BuildContext context,
+  ) {
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.9,
+      ),
+      child: Opacity(
+        opacity: textData.opacity.value,
+        child: TextField(
+          showCursor: false,
+          controller: TextEditingController(text: textData.text.value)
+            ..selection = TextSelection.collapsed(
+              offset: textData.text.value.length,
             ),
-            const SizedBox(width: 8),
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.6,
+          onChanged: (newText) => controller.updateText(index, newText),
+          style: fontController
+              .getFontStyle(textData.font.value)
+              .copyWith(
+                color: textData.color.value,
+                fontSize: textData.fontSize.value,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2.0,
+                    color: Colors.black.withOpacity(0.9),
+                    offset: const Offset(1.0, 1.0),
+                  ),
+                  Shadow(
+                    blurRadius: 4.0,
+                    color: Colors.black.withOpacity(0.7),
+                    offset: const Offset(2.0, 2.0),
+                  ),
+                  Shadow(
+                    blurRadius: 8.0,
+                    color: Colors.black.withOpacity(0.5),
+                    offset: const Offset(3.0, 3.0),
+                  ),
+                ],
               ),
-              child: TextField(
-                controller: TextEditingController(text: textData.text.value)
-                  ..selection = TextSelection.collapsed(
-                      offset: textData.text.value.length),
-                onChanged: (newText) => controller.updateText(index, newText),
-                style: fontController.getFontStyle(textData.font.value).copyWith(
-                  color: textData.color.value,
-                  fontSize: textData.fontSize.value,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 2.0,
-                      color: Colors.black.withOpacity(0.9),
-                      offset: const Offset(1.0, 1.0),
-                    ),
-                    Shadow(
-                      blurRadius: 4.0,
-                      color: Colors.black.withOpacity(0.7),
-                      offset: const Offset(2.0, 2.0),
-                    ),
-                    Shadow(
-                      blurRadius: 8.0,
-                      color: Colors.black.withOpacity(0.5),
-                      offset: const Offset(3.0, 3.0),
-                    ),
-                  ],
-                ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: null,
-              ),
-            ),
-          ],
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          textAlign: TextAlign.center,
+          // maxLines: 3,
         ),
-      ],
+      ),
     );
   }
 }
