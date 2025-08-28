@@ -4,9 +4,12 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
+import 'package:crop_image/crop_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+
 
 import 'controller/image_segmentation_controller.dart';
 import 'widgets/action_buttons_widget.dart';
@@ -21,67 +24,98 @@ class OriginalImageOnly extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(ImageSegmentationController());
 
+    var initialColors = [
+      Colors.blue,
+      Colors.deepPurple,
+      Colors.deepPurpleAccent,
+      Colors.blueAccent,
+    ];
+
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/logo.png', 
-              height: 40,
-            ),
-            Text(
-              "Text fusion..",
-              style: GoogleFonts.eduAuVicWaNtHand(
-                fontWeight: FontWeight.w600,
-                fontSize: 24,
+      body: Stack(
+        children: [
+        
+          Column(
+            children: [
+              // Header Container (replacing AppBar)
+              SizedBox(
+                height: 56.0, // Standard AppBar height
               ),
-            ),
-          ],
-        ),
-        actions: [
-          Obx(
-            () => controller.textWidgets.length < 3
-                ? IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      controller.addTextWidget();
-                    },
-                  )
-                : const SizedBox.shrink(),
-          ),
-          Obx(
-            () => controller.original.value != null
-                ? IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      controller.removeImage();
-                    },
-                  )
-                : const SizedBox.shrink(),
+              Container(
+                height: 56.0, // Standard AppBar height
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  children: [
+                    Image.asset('assets/logo.png', height: 40),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Text fusion..",
+                      style: GoogleFonts.eduAuVicWaNtHand(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 24,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const Spacer(),
+                    Obx(
+                      () => controller.textWidgets.length < 3
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.add,
+                                color: controller.original.value != null
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                              onPressed: () {
+                                controller.addTextWidget();
+                              },
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    Obx(
+                      () => controller.original.value != null
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: controller.original.value != null
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                              onPressed: () {
+                                controller.removeImage();
+                              },
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Existing content (ImageDisplayWidget and OpacityControlsWidget)
+              Expanded(
+                child: Column(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 0.85,
+                      child: ImageDisplayWidget(),
+                    ),
+                    Obx(
+                      () =>
+                          controller.foreground.value != null &&
+                              controller.background.value != null
+                          ? OpacityControlsWidget()
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AspectRatio(
-              aspectRatio: 0.85,
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                child: ImageDisplayWidget(),
-              ),
-            ),
-            Obx(
-              () =>
-                  controller.foreground.value != null &&
-                      controller.background.value != null
-                  ? OpacityControlsWidget()
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        ),
       ),
       floatingActionButton: ActionButtonsWidget(),
     );
@@ -103,23 +137,22 @@ class ImageDisplayWidget extends StatelessWidget {
           children: [
             Icon(Icons.image, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text("Pick an image "),
+            Text("Pick an image", style: TextStyle(color: Colors.grey)),
           ],
         );
       }
-    
+
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
         child: Card(
           elevation: 10,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(
-              7,
-            ), // Slightly smaller to account for border
+            borderRadius: BorderRadius.circular(12),
             child: RepaintBoundary(
               key: controller.saveRepaintBoundaryKey,
               child: Stack(
                 children: [
+                  // Layer 1: Background image
                   if (controller.background.value != null)
                     Positioned.fill(
                       child: Opacity(
@@ -129,13 +162,13 @@ class ImageDisplayWidget extends StatelessWidget {
                         ),
                       ),
                     ),
-    
+
                   // Layer 2: Text widgets (middle layer - behind foreground)
                   ...controller.textWidgets.asMap().entries.map((entry) {
                     final index = entry.key;
                     return MovableTextWidget(index: index);
                   }).toList(),
-    
+
                   // Layer 3: Foreground image (top layer - in front of text)
                   if (controller.foreground.value != null)
                     Positioned.fill(
@@ -143,14 +176,12 @@ class ImageDisplayWidget extends StatelessWidget {
                         child: Opacity(
                           opacity: controller.foregroundOpacity.value,
                           child: CustomPaint(
-                            painter: ImagePainter(
-                              controller.foreground.value!,
-                            ),
+                            painter: ImagePainter(controller.foreground.value!),
                           ),
                         ),
                       ),
                     ),
-    
+
                   // Layer 4: Processing indicator (topmost layer)
                   if (controller.isProcessing.value)
                     Positioned.fill(
@@ -231,4 +262,59 @@ class ImagePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant ImagePainter oldDelegate) =>
       oldDelegate.image != image;
+}
+
+class CropImageScreen extends StatelessWidget {
+  final Uint8List imageBytes;
+  final CropController cropController;
+
+  const CropImageScreen({
+    super.key,
+    required this.imageBytes,
+    required this.cropController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Crop Image',
+          style: GoogleFonts.eduAuVicWaNtHand(
+            fontWeight: FontWeight.w600,
+            fontSize: 24,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: () async {
+              final croppedBitmap = await cropController.croppedBitmap();
+              final byteData = await croppedBitmap.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              final croppedBytes = byteData!.buffer.asUint8List();
+              Get.back(result: croppedBytes);
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: CropImage(
+          controller: cropController,
+          image: Image.memory(imageBytes),
+          gridColor: Colors.white,
+          gridInnerColor: Colors.white,
+          gridCornerColor: Colors.white,
+          gridCornerSize: 25,
+          gridThinWidth: 2,
+          gridThickWidth: 5,
+          scrimColor: Colors.grey.withOpacity(0.5),
+          alwaysShowThirdLines: true,
+          minimumImageSize: 100,
+          maximumImageSize: 1500,
+        ),
+      ),
+    );
+  }
 }

@@ -3,12 +3,11 @@ import 'package:get/route_manager.dart';
 
 import 'text_behind_image.dart';
 
-
-void main(){
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

@@ -51,47 +51,47 @@ class FontController extends GetxController {
  TextStyle getFontStyle(String fontName, {double fontSize = 30}) {
     switch (fontName) {
       case 'Montserrat':
-        return GoogleFonts.montserrat(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.montserrat(fontSize: fontSize, color: Colors.black);
       case 'Poppins':
-        return GoogleFonts.poppins(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.poppins(fontSize: fontSize, color: Colors.black);
       case 'Bebas Neue':
-        return GoogleFonts.bebasNeue(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.bebasNeue(fontSize: fontSize, color: Colors.black);
       case 'Inter':
-        return GoogleFonts.inter(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.inter(fontSize: fontSize, color: Colors.black);
       case 'Oswald':
-        return GoogleFonts.oswald(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.oswald(fontSize: fontSize, color: Colors.black);
       case 'Josefin Sans':
-        return GoogleFonts.josefinSans(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.josefinSans(fontSize: fontSize, color: Colors.black);
       case 'Playfair Display':
-        return GoogleFonts.playfairDisplay(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.playfairDisplay(fontSize: fontSize, color: Colors.black);
       case 'Lora':
-        return GoogleFonts.lora(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.lora(fontSize: fontSize, color: Colors.black);
       case 'Crimson Pro':
-        return GoogleFonts.crimsonPro(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.crimsonPro(fontSize: fontSize, color: Colors.black);
       case 'Libre Baskerville':
-        return GoogleFonts.libreBaskerville(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.libreBaskerville(fontSize: fontSize, color: Colors.black);
       case 'Roboto Slab':
-        return GoogleFonts.robotoSlab(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.robotoSlab(fontSize: fontSize, color: Colors.black);
       case 'Arvo':
-        return GoogleFonts.arvo(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.arvo(fontSize: fontSize, color: Colors.black);
       case 'Bitter':
-        return GoogleFonts.bitter(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.bitter(fontSize: fontSize, color: Colors.black);
       case 'Lobster':
-        return GoogleFonts.lobster(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.lobster(fontSize: fontSize, color: Colors.black);
       case 'Dancing Script':
-        return GoogleFonts.dancingScript(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.dancingScript(fontSize: fontSize, color: Colors.black);
       case 'Great Vibes':
-        return GoogleFonts.greatVibes(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.greatVibes(fontSize: fontSize, color: Colors.black);
       case 'Amatic SC':
-        return GoogleFonts.amaticSc(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.amaticSc(fontSize: fontSize, color: Colors.black);
       case 'Space Mono':
-        return GoogleFonts.spaceMono(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.spaceMono(fontSize: fontSize, color: Colors.black);
       case 'Inconsolata':
-        return GoogleFonts.inconsolata(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.inconsolata(fontSize: fontSize, color: Colors.black);
       case 'Abril Fatface':
-        return GoogleFonts.abrilFatface(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.abrilFatface(fontSize: fontSize, color: Colors.black);
       default:
-        return GoogleFonts.montserrat(fontSize: fontSize, color: Colors.white);
+        return GoogleFonts.montserrat(fontSize: fontSize, color: Colors.black);
     }
   }
 

@@ -49,7 +49,9 @@ class ActionButtonsWidget extends StatelessWidget {
         ),
            const SizedBox(width: 16),
         FloatingActionButton(
-          onPressed: controller.pickImage,
+          heroTag: 'pickImage',
+          onPressed: controller.showImageSourceDialog,
+          tooltip: 'Pick Image',
           child: const Icon(Icons.add_a_photo),
         ),
       ],

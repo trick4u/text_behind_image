@@ -3,9 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:crop_image/crop_image.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_background_remover/image_background_remover.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
@@ -16,6 +19,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/text_model.dart';
+import '../text_behind_image.dart';
 
 class SegmentationData {
   final Uint8List originalBytes;
@@ -64,7 +68,7 @@ class ImageSegmentationController extends GetxController {
   final RxString text = "Hello".obs;
   final RxBool isProcessing = false.obs;
   final RxBool isSaving = false.obs;
-   final RxBool isSharing = false.obs;
+  final RxBool isSharing = false.obs;
   final RxList<TextData> textWidgets = <TextData>[].obs;
   final RxBool isInitialized = false.obs;
   final RxDouble fontSize = 30.0.obs; // Added font size observable
@@ -76,6 +80,11 @@ class ImageSegmentationController extends GetxController {
 
   GlobalKey get repaintBoundaryKey => _repaintBoundaryKey;
   GlobalKey get saveRepaintBoundaryKey => _saveRepaintBoundaryKey;
+
+  final CropController cropController = CropController(
+    aspectRatio: 0.85, // Match ImageDisplayWidget aspect ratio
+    defaultCrop: Rect.fromLTRB(0.1, 0.1, 0.9, 0.9),
+  );
 
   // Private variables
   final picker = ImagePicker();
@@ -135,92 +144,170 @@ class ImageSegmentationController extends GetxController {
     }
   }
 
-void updateFontSize(double size) {
-    if (selectedTextIndex.value >= 0 && selectedTextIndex.value < textWidgets.length) {
-      textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(20.0, 200.0);
+  void updateFontSize(double size) {
+    if (selectedTextIndex.value >= 0 &&
+        selectedTextIndex.value < textWidgets.length) {
+      textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(
+        20.0,
+        200.0,
+      );
     }
   }
+
   void updateTextOpacity(double opacity) {
-  if (selectedTextIndex.value >= 0 && selectedTextIndex.value < textWidgets.length) {
-    textWidgets[selectedTextIndex.value].opacity.value = opacity.clamp(0.0, 1.0);
+    if (selectedTextIndex.value >= 0 &&
+        selectedTextIndex.value < textWidgets.length) {
+      textWidgets[selectedTextIndex.value].opacity.value = opacity.clamp(
+        0.0,
+        1.0,
+      );
+    }
+  }
+
+  //blur the background
+  Future<void> showImageSourceDialog() async {
+  await Get.dialog(
+    AlertDialog(
+      title: Text(
+        'Select Image Source',
+        style: GoogleFonts.eduAuVicWaNtHand(
+          fontWeight: FontWeight.w600,
+          fontSize: 20,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.camera_alt, color: Colors.blue),
+            title: Text('Camera'),
+            onTap: () {
+              Get.back();
+              pickImageFromSource(ImageSource.camera);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_library, color: Colors.green),
+            title: Text('Gallery'),
+            onTap: () {
+              Get.back();
+              pickImageFromSource(ImageSource.gallery);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+Future<void> pickImageFromSource(ImageSource source) async {
+  try {
+    final x = await picker.pickImage(
+      source: source,
+      maxHeight: 1500,
+      maxWidth: 1500,
+      imageQuality: 80,
+    );
+
+    if (x == null) return;
+
+    final bytes = await x.readAsBytes();
+    
+    // Navigate to cropper screen
+    final croppedBytes = await Get.to<Uint8List>(
+      () => CropImageScreen(
+        imageBytes: bytes,
+        cropController: cropController,
+      ),
+    );
+
+    if (croppedBytes == null) return;
+
+    final origImg = await decodeImageFromList(croppedBytes);
+
+    original.value = origImg;
+    _originalBytes = croppedBytes;
+    foreground.value = null;
+    background.value = null;
+    foregroundOpacity.value = 0.0;
+    backgroundOpacity.value = 0.0;
+    segmentImage();
+  } catch (e) {
+    Get.snackbar('Error', 'Failed to pick image: ${e.toString()}');
   }
 }
 
-//blur the background
-
-
-Future<void> saveImage() async {
-  if (original.value == null) {
-    Get.snackbar('Error', 'No image to save');
-    return;
-  }
-
-  try {
-    isSaving.value = true;
-
-    // Check permission status before requesting
-    var status = await Permission.storage.status;
-    if (!status.isGranted) {
-      // Request permission only if not already granted
-      status = await Permission.storage.request();
-      if (!status.isGranted) {
-        Get.snackbar(
-          'Permission Denied',
-          'Storage permission is required to save images',
-        );
-        return;
-      }
-    }
-
-    // Ensure the RepaintBoundary widget is rendered
-    if (_saveRepaintBoundaryKey.currentContext == null) {
-      Get.snackbar('Error', 'Cannot save image: Widget not ready');
+  Future<void> saveImage() async {
+    if (original.value == null) {
+      Get.snackbar('Error', 'No image to save');
       return;
     }
 
-    // Capture the RepaintBoundary as an image
-    final RenderRepaintBoundary boundary =
-        _saveRepaintBoundaryKey.currentContext!.findRenderObject()
-            as RenderRepaintBoundary;
+    try {
+      isSaving.value = true;
 
-    final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-    final ByteData? byteData = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
+      // Check permission status before requesting
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        // Request permission only if not already granted
+        status = await Permission.storage.request();
+        if (!status.isGranted) {
+          Get.snackbar(
+            'Permission Denied',
+            'Storage permission is required to save images',
+          );
+          return;
+        }
+      }
 
-    if (byteData != null) {
-      final Uint8List pngBytes = byteData.buffer.asUint8List();
+      // Ensure the RepaintBoundary widget is rendered
+      if (_saveRepaintBoundaryKey.currentContext == null) {
+        Get.snackbar('Error', 'Cannot save image: Widget not ready');
+        return;
+      }
 
-      // Save to gallery
-      final result = await ImageGallerySaverPlus.saveImage(
-        pngBytes,
-        quality: 100,
-        name: "text_behind_image_${DateTime.now().millisecondsSinceEpoch}",
+      // Capture the RepaintBoundary as an image
+      final RenderRepaintBoundary boundary =
+          _saveRepaintBoundaryKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
       );
 
-      if (result['isSuccess'] == true) {
-        Get.snackbar(
-          'Success',
-          'Image saved to gallery!',
-          backgroundColor: Colors.green.withOpacity(0.8),
-          colorText: Colors.white,
-        );
-      } else {
-        Get.snackbar('Error', 'Failed to save image: ${result['error']}');
-        print('Error saving image: ${result['error']}');
-      }
-    } else {
-      Get.snackbar('Error', 'Failed to capture image data');
-    }
-  } catch (e) {
-    Get.snackbar('Error', 'Failed to save image: ${e.toString()}');
-    print('Error saving image: $e');
-  } finally {
-    isSaving.value = false;
-  }
-}
+      if (byteData != null) {
+        final Uint8List pngBytes = byteData.buffer.asUint8List();
 
-Future<void> shareImage() async {
+        // Save to gallery
+        final result = await ImageGallerySaverPlus.saveImage(
+          pngBytes,
+          quality: 100,
+          name: "text_behind_image_${DateTime.now().millisecondsSinceEpoch}",
+        );
+
+        if (result['isSuccess'] == true) {
+          Get.snackbar(
+            'Success',
+            'Image saved to gallery!',
+            backgroundColor: Colors.green.withOpacity(0.8),
+            colorText: Colors.white,
+          );
+        } else {
+          Get.snackbar('Error', 'Failed to save image: ${result['error']}');
+          print('Error saving image: ${result['error']}');
+        }
+      } else {
+        Get.snackbar('Error', 'Failed to capture image data');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to save image: ${e.toString()}');
+      print('Error saving image: $e');
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> shareImage() async {
     if (original.value == null) {
       Get.snackbar('Error', 'No image to share');
       return;
@@ -249,7 +336,8 @@ Future<void> shareImage() async {
         // Save to temporary file for sharing
         final tempDir = await getTemporaryDirectory();
         final tempFile = File(
-            '${tempDir.path}/text_behind_image_${DateTime.now().millisecondsSinceEpoch}.png');
+          '${tempDir.path}/text_behind_image_${DateTime.now().millisecondsSinceEpoch}.png',
+        );
         await tempFile.writeAsBytes(pngBytes);
 
         ShareParams(
@@ -258,26 +346,29 @@ Future<void> shareImage() async {
         );
 
         // Share the image
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(tempFile.path)],
-            text: 'Check out my edited image!',
-          ),
-        ).then((_) {
-          // Clean up temporary file
-           tempFile.delete();
-        }).then((_) {
-          Get.snackbar(
-            'Success',
-            'Image shared successfully!',
-            backgroundColor: Colors.green.withOpacity(0.8),
-            colorText: Colors.white,
-          );
-        }).catchError((error) {
-          Get.snackbar('Error', 'Failed to share image: $error');
-          print('Error sharing image: $error');
-        });
-  
+        await SharePlus.instance
+            .share(
+              ShareParams(
+                files: [XFile(tempFile.path)],
+                text: 'Check out my edited image!',
+              ),
+            )
+            .then((_) {
+              // Clean up temporary file
+              tempFile.delete();
+            })
+            .then((_) {
+              Get.snackbar(
+                'Success',
+                'Image shared successfully!',
+                backgroundColor: Colors.green.withOpacity(0.8),
+                colorText: Colors.white,
+              );
+            })
+            .catchError((error) {
+              Get.snackbar('Error', 'Failed to share image: $error');
+              print('Error sharing image: $error');
+            });
       } else {
         Get.snackbar('Error', 'Failed to capture image data');
       }
@@ -288,32 +379,11 @@ Future<void> shareImage() async {
       isSharing.value = false;
     }
   }
+
   // Methods
-  Future<void> pickImage() async {
-    try {
-      final x = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxHeight: 1500,
-        maxWidth: 1500,
-        imageQuality: 80,
-      );
-
-      if (x == null) return;
-
-      final bytes = await x.readAsBytes();
-      final origImg = await decodeImageFromList(bytes);
-
-      original.value = origImg;
-      _originalBytes = bytes;
-      foreground.value = null;
-      background.value = null;
-      foregroundOpacity.value = 0.0;
-      backgroundOpacity.value = 0.0;
-      segmentImage();
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to pick image: ${e.toString()}');
-    }
-  }
+Future<void> pickImage() async {
+  await showImageSourceDialog();
+}
 
   Future<void> removeImage() async {
     original.value = null;

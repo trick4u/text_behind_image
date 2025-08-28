@@ -17,7 +17,7 @@ class TextData {
     required double initialY,
     String initialFont = 'Roboto',
     Color initialColor = Colors.white, // Add default color
-     double initialFontSize = 30.0,
+     double initialFontSize = 60.0,
      double initialOpacity = 1.0,
   })  : text = initialText.obs,
         xPos = initialX.obs,
