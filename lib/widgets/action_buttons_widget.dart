@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../controller/image_segmentation_controller.dart';
 import '../text_behind_image.dart';
+import 'text_style_toggle_button.dart';
 
 class ActionButtonsWidget extends StatelessWidget {
   const ActionButtonsWidget({super.key});
@@ -14,6 +15,7 @@ class ActionButtonsWidget extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+    
         Obx(
           () => controller.original.value != null
               ? FloatingActionButton(

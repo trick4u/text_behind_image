@@ -10,7 +10,7 @@
     <!-- Internet permission if needed -->
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="text_behind_image"
+        android:label="Text Fusion"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

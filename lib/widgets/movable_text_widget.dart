@@ -63,8 +63,7 @@ class MovableTextWidget extends StatelessWidget {
                   controller.removeTextWidget(index);
                 },
           child: Container(
-            child: hideControls
-                ? _buildTextOnly(textData, controller, fontController)
+            child
                 : _buildTextWithControls(
                     textData,
                     controller,
@@ -77,21 +76,71 @@ class MovableTextWidget extends StatelessWidget {
     });
   }
 
-  Widget _buildTextOnly(
-    TextData textData,
-    ImageSegmentationController controller,
-    FontController fontController,
-  ) {
-    return Opacity(
+ Widget _buildTextOnly(
+  TextData textData,
+  ImageSegmentationController controller,
+  FontController fontController,
+) {
+  return Opacity(
+    opacity: textData.opacity.value,
+    child: Text(
+      textData.text.value,
+      style: fontController
+          .getFontStyle(textData.font.value)
+          .copyWith(
+            color: textData.color.value,
+            fontSize: textData.fontSize.value,
+            fontWeight: _getTextWeight(textData.textStyle.value),
+            fontStyle: _getTextStyle(textData.textStyle.value),
+            shadows: [
+              Shadow(
+                blurRadius: 2.0,
+                color: Colors.black.withOpacity(0.9),
+                offset: const Offset(1.0, 1.0),
+              ),
+              Shadow(
+                blurRadius: 4.0,
+                color: Colors.black.withOpacity(0.7),
+                offset: const Offset(2.0, 2.0),
+              ),
+              Shadow(
+                blurRadius: 8.0,
+                color: Colors.black.withOpacity(0.5),
+                offset: const Offset(3.0, 3.0),
+              ),
+            ],
+          ),
+      textAlign: TextAlign.center,
+    ),
+  );
+}
+
+Widget _buildTextWithControls(
+  TextData textData,
+  ImageSegmentationController controller,
+  FontController fontController,
+  BuildContext context,
+) {
+  return Container(
+    constraints: BoxConstraints(
+      maxWidth: MediaQuery.of(context).size.width * 0.9,
+    ),
+    child: Opacity(
       opacity: textData.opacity.value,
-      child: Text(
-        textData.text.value,
+      child: TextField(
+        showCursor: false,
+        controller: TextEditingController(text: textData.text.value)
+          ..selection = TextSelection.collapsed(
+            offset: textData.text.value.length,
+          ),
+        onChanged: (newText) => controller.updateText(index, newText),
         style: fontController
             .getFontStyle(textData.font.value)
             .copyWith(
               color: textData.color.value,
               fontSize: textData.fontSize.value,
-              fontWeight: FontWeight.bold,
+              fontWeight: _getTextWeight(textData.textStyle.value),
+              fontStyle: _getTextStyle(textData.textStyle.value),
               shadows: [
                 Shadow(
                   blurRadius: 2.0,
@@ -110,63 +159,35 @@ class MovableTextWidget extends StatelessWidget {
                 ),
               ],
             ),
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
         textAlign: TextAlign.center,
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildTextWithControls(
-    TextData textData,
-    ImageSegmentationController controller,
-    FontController fontController,
-    BuildContext context,
-  ) {
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.9,
-      ),
-      child: Opacity(
-        opacity: textData.opacity.value,
-        child: TextField(
-          showCursor: false,
-          controller: TextEditingController(text: textData.text.value)
-            ..selection = TextSelection.collapsed(
-              offset: textData.text.value.length,
-            ),
-          onChanged: (newText) => controller.updateText(index, newText),
-          style: fontController
-              .getFontStyle(textData.font.value)
-              .copyWith(
-                color: textData.color.value,
-                fontSize: textData.fontSize.value,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    blurRadius: 2.0,
-                    color: Colors.black.withOpacity(0.9),
-                    offset: const Offset(1.0, 1.0),
-                  ),
-                  Shadow(
-                    blurRadius: 4.0,
-                    color: Colors.black.withOpacity(0.7),
-                    offset: const Offset(2.0, 2.0),
-                  ),
-                  Shadow(
-                    blurRadius: 8.0,
-                    color: Colors.black.withOpacity(0.5),
-                    offset: const Offset(3.0, 3.0),
-                  ),
-                ],
-              ),
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          textAlign: TextAlign.center,
-          // maxLines: 3,
-        ),
-      ),
-    );
+
+FontWeight _getTextWeight(TextStyleType style) {
+  switch (style) {
+    case TextStyleType.bold:
+      return FontWeight.bold;
+    case TextStyleType.normal:
+    case TextStyleType.italic:
+      return FontWeight.normal;
   }
+}
+
+FontStyle _getTextStyle(TextStyleType style) {
+  switch (style) {
+    case TextStyleType.italic:
+      return FontStyle.italic;
+    case TextStyleType.normal:
+    case TextStyleType.bold:
+      return FontStyle.normal;
+  }
+}
 }

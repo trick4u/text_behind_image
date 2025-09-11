@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:crop_image/crop_image.dart';
+import 'package:flip_card/flip_card.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -73,6 +74,15 @@ class ImageSegmentationController extends GetxController {
   final RxBool isInitialized = false.obs;
   final RxDouble fontSize = 30.0.obs; // Added font size observable
   final RxInt selectedTextIndex = (-1).obs; // Add this line
+  final RxDouble brightness = 0.0.obs; // Range: -100 to +100
+  final RxDouble contrast = 1.0.obs;
+  // new variables
+  final RxDouble saturation = 1.0.obs; // Range: 0.0 to 2.0
+  final RxDouble blur = 0.0.obs; // Range: 0.0 to 10.0
+  final RxDouble vignette = 0.0.obs; // Range: 0.0 to 1.0
+  final RxDouble hueShift = 0.0.obs; // Range: -180.0 to 180.0
+  final RxBool isSepia = false.obs;
+  final RxBool isGrayscale = false.obs;
 
   final GlobalKey _repaintBoundaryKey = GlobalKey();
   final GlobalKey _saveRepaintBoundaryKey =
@@ -80,6 +90,7 @@ class ImageSegmentationController extends GetxController {
 
   GlobalKey get repaintBoundaryKey => _repaintBoundaryKey;
   GlobalKey get saveRepaintBoundaryKey => _saveRepaintBoundaryKey;
+  final GlobalKey<FlipCardState> flipCardKey = GlobalKey<FlipCardState>();
 
   final CropController cropController = CropController(
     aspectRatio: 0.85, // Match ImageDisplayWidget aspect ratio
@@ -97,6 +108,60 @@ class ImageSegmentationController extends GetxController {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeBackgroundRemover();
     });
+  }
+
+  void updateBrightness(double value) {
+    brightness.value = value.clamp(-100.0, 100.0);
+  }
+
+  void updateContrast(double value) {
+    contrast.value = value.clamp(0.5, 2.0);
+  }
+   void updateSaturation(double value) {
+    saturation.value = value.clamp(0.0, 2.0);
+  }
+
+  void updateBlur(double value) {
+    blur.value = value.clamp(0.0, 10.0);
+  }
+
+  void updateVignette(double value) {
+    vignette.value = value.clamp(0.0, 1.0);
+  }
+
+  void updateHueShift(double value) {
+    hueShift.value = value.clamp(-180.0, 180.0);
+  }
+
+  void toggleSepia() {
+    isSepia.value = !isSepia.value;
+    // Disable grayscale when sepia is enabled
+    if (isSepia.value) {
+      isGrayscale.value = false;
+    }
+  }
+
+  void toggleGrayscale() {
+    isGrayscale.value = !isGrayscale.value;
+    // Disable sepia when grayscale is enabled
+    if (isGrayscale.value) {
+      isSepia.value = false;
+    }
+  }
+
+  void flipCard() {
+    flipCardKey.currentState?.toggleCard();
+  }
+
+   void resetImageAdjustments() {
+    brightness.value = 0.0;
+    contrast.value = 1.0;
+    saturation.value = 1.0;
+    blur.value = 0.0;
+    vignette.value = 0.0;
+    hueShift.value = 0.0;
+    isSepia.value = false;
+    isGrayscale.value = false;
   }
 
   void _initializeBackgroundRemover() async {
@@ -164,77 +229,83 @@ class ImageSegmentationController extends GetxController {
     }
   }
 
+  void updateTextStyle(TextStyleType style) {
+    if (selectedTextIndex.value >= 0 &&
+        selectedTextIndex.value < textWidgets.length) {
+      textWidgets[selectedTextIndex.value].textStyle.value = style;
+    }
+  }
+
   //blur the background
   Future<void> showImageSourceDialog() async {
-  await Get.dialog(
-    AlertDialog(
-      title: Text(
-        'Select Image Source',
-        style: GoogleFonts.eduAuVicWaNtHand(
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
+    await Get.dialog(
+      AlertDialog(
+        title: Text(
+          'Select Image Source',
+          style: GoogleFonts.eduAuVicWaNtHand(
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.camera_alt, color: Colors.blue),
+              title: Text('Camera'),
+              onTap: () {
+                Get.back();
+                pickImageFromSource(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library, color: Colors.green),
+              title: Text('Gallery'),
+              onTap: () {
+                Get.back();
+                pickImageFromSource(ImageSource.gallery);
+              },
+            ),
+          ],
         ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.camera_alt, color: Colors.blue),
-            title: Text('Camera'),
-            onTap: () {
-              Get.back();
-              pickImageFromSource(ImageSource.camera);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.photo_library, color: Colors.green),
-            title: Text('Gallery'),
-            onTap: () {
-              Get.back();
-              pickImageFromSource(ImageSource.gallery);
-            },
-          ),
-        ],
-      ),
-    ),
-  );
-}
-Future<void> pickImageFromSource(ImageSource source) async {
-  try {
-    final x = await picker.pickImage(
-      source: source,
-      maxHeight: 1500,
-      maxWidth: 1500,
-      imageQuality: 80,
     );
-
-    if (x == null) return;
-
-    final bytes = await x.readAsBytes();
-    
-    // Navigate to cropper screen
-    final croppedBytes = await Get.to<Uint8List>(
-      () => CropImageScreen(
-        imageBytes: bytes,
-        cropController: cropController,
-      ),
-    );
-
-    if (croppedBytes == null) return;
-
-    final origImg = await decodeImageFromList(croppedBytes);
-
-    original.value = origImg;
-    _originalBytes = croppedBytes;
-    foreground.value = null;
-    background.value = null;
-    foregroundOpacity.value = 0.0;
-    backgroundOpacity.value = 0.0;
-    segmentImage();
-  } catch (e) {
-    Get.snackbar('Error', 'Failed to pick image: ${e.toString()}');
   }
-}
+
+  Future<void> pickImageFromSource(ImageSource source) async {
+    try {
+      final x = await picker.pickImage(
+        source: source,
+        maxHeight: 1500,
+        maxWidth: 1500,
+        imageQuality: 80,
+      );
+
+      if (x == null) return;
+
+      final bytes = await x.readAsBytes();
+
+      // Navigate to cropper screen
+      final croppedBytes = await Get.to<Uint8List>(
+        () =>
+            CropImageScreen(imageBytes: bytes, cropController: cropController),
+      );
+
+      if (croppedBytes == null) return;
+
+      final origImg = await decodeImageFromList(croppedBytes);
+
+      original.value = origImg;
+      _originalBytes = croppedBytes;
+      foreground.value = null;
+      background.value = null;
+      foregroundOpacity.value = 0.0;
+      backgroundOpacity.value = 0.0;
+      segmentImage();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to pick image: ${e.toString()}');
+    }
+  }
 
   Future<void> saveImage() async {
     if (original.value == null) {
@@ -381,9 +452,9 @@ Future<void> pickImageFromSource(ImageSource source) async {
   }
 
   // Methods
-Future<void> pickImage() async {
-  await showImageSourceDialog();
-}
+  Future<void> pickImage() async {
+    await showImageSourceDialog();
+  }
 
   Future<void> removeImage() async {
     original.value = null;
