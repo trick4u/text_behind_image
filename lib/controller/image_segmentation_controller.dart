@@ -57,7 +57,8 @@ class SegmentationResult {
   });
 }
 
-class ImageSegmentationController extends GetxController {
+class ImageSegmentationController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   // Observable variables
   final Rx<ui.Image?> original = Rx<ui.Image?>(null);
   final Rx<ui.Image?> foreground = Rx<ui.Image?>(null);
@@ -104,11 +105,41 @@ class ImageSegmentationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    startAnimation();
+
     addTextWidget();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeBackgroundRemover();
     });
   }
+
+  startAnimation() {
+    // Initialize pulse animation
+    pulseAnimationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+
+    pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: pulseAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Listen to animation changes
+    pulseAnimation.addListener(() {
+      pulseScale.value = pulseAnimation.value;
+    });
+
+    // Start the repeating animation
+    pulseAnimationController.repeat(reverse: true);
+  }
+
+  late AnimationController pulseAnimationController;
+  late Animation<double> pulseAnimation;
+  final RxDouble pulseScale = 0.8.obs;
 
   void updateBrightness(double value) {
     brightness.value = value.clamp(-100.0, 100.0);
@@ -117,7 +148,8 @@ class ImageSegmentationController extends GetxController {
   void updateContrast(double value) {
     contrast.value = value.clamp(0.5, 2.0);
   }
-   void updateSaturation(double value) {
+
+  void updateSaturation(double value) {
     saturation.value = value.clamp(0.0, 2.0);
   }
 
@@ -153,7 +185,7 @@ class ImageSegmentationController extends GetxController {
     flipCardKey.currentState?.toggleCard();
   }
 
-   void resetImageAdjustments() {
+  void resetImageAdjustments() {
     brightness.value = 0.0;
     contrast.value = 1.0;
     saturation.value = 1.0;
@@ -173,6 +205,7 @@ class ImageSegmentationController extends GetxController {
 
   @override
   void onClose() {
+    pulseAnimationController.dispose();
     BackgroundRemover.instance.dispose();
     original.value?.dispose();
     foreground.value?.dispose();

@@ -14,6 +14,7 @@ import 'controller/image_segmentation_controller.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/movable_text_widget.dart';
 import 'widgets/opacity_controls.dart';
+import 'widgets/pulsating_icon.dart';
 
 // Main Widget
 class OriginalImageOnly extends StatelessWidget {
@@ -95,17 +96,71 @@ class ImageDisplayWidget extends StatelessWidget {
 
     return Obx(() {
       if (controller.original.value == null) {
-        return const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(Icons.image, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text("Pick an image", style: TextStyle(color: Colors.grey)),
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
+          child: Card(
+            elevation: 10,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.blue.shade50,
+                      Colors.purple.shade50,
+                      Colors.pink.shade50,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Animated container with pulsing effect
+                    const PulsingIcon(),
+                    const SizedBox(height: 24),
+                    Text(
+                      "Add Your Image",
+                      style: GoogleFonts.eduAuVicWaNtHand(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Tap the camera button to get started",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Decorative elements
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildFeatureChip("Text Behind", Icons.text_fields),
+                        const SizedBox(width: 12),
+                        _buildFeatureChip("Filters", Icons.tune),
+                        const SizedBox(width: 12),
+                        _buildFeatureChip("Effects", Icons.auto_fix_high),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
       }
 
+      // Your existing code for when image is present
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 0.0),
         child: Card(
@@ -187,6 +242,39 @@ class ImageDisplayWidget extends StatelessWidget {
         ),
       );
     });
+  }
+
+  Widget _buildFeatureChip(String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.blue.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: Colors.blue.shade600,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.blue.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
