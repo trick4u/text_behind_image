@@ -26,6 +26,8 @@ class OriginalImageOnly extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
+      resizeToAvoidBottomInset: false,
+      
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Row(
@@ -65,26 +67,28 @@ class OriginalImageOnly extends StatelessWidget {
           ),
         ],
       ),
+    
 
-      body: Column(
-        children: [
-          Column(
-            children: [
-              AspectRatio(aspectRatio: 0.85, child: ImageDisplayWidget()),
-              Obx(
-                () =>
-                    controller.foreground.value != null &&
-                        controller.background.value != null
-                    ? FlipControlsWidget()
-                    : const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            AspectRatio(aspectRatio: 0.85, child: ImageDisplayWidget()),
+            Obx(
+              () =>
+                  controller.foreground.value != null &&
+                      controller.background.value != null
+                  ? FlipControlsWidget()
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: ActionButtonsWidget(),
+      
     );
   }
+
+
 }
 
 class ImageDisplayWidget extends StatelessWidget {

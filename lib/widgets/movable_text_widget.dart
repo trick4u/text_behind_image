@@ -57,11 +57,9 @@ class MovableTextWidget extends StatelessWidget {
               : () {
                   controller.selectedTextIndex.value = index;
                 },
-          onLongPress: hideControls
-              ? null
-              : () {
-                  controller.removeTextWidget(index);
-                },
+          onLongPress: () {
+            controller.removeTextWidget(index);
+          },
           child: Container(
             child
                 : _buildTextWithControls(

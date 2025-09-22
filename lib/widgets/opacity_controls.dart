@@ -16,7 +16,7 @@ class FlipControlsWidget extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
-      height: 260, 
+      
       child: FlipCard(
         key: controller.flipCardKey,
         direction: FlipDirection.HORIZONTAL,

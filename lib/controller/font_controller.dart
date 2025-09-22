@@ -31,8 +31,9 @@ class FontController extends GetxController {
   final RxMap<int, String> selectedFonts = <int, String>{}.obs;
 
   final RxMap<int, double> fontSizes = <int, double>{}.obs;
-  final double defaultFontSize = 30.0;
-  final double minFontSize = 8.0;
+ final double defaultFontSize = 80.0; // Increased from 30.0
+final double minFontSize = 30.0; 
+  
   final double maxFontSize = 72.0;
 
   // Default font

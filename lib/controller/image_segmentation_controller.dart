@@ -243,14 +243,14 @@ class ImageSegmentationController extends GetxController
   }
 
   void updateFontSize(double size) {
-    if (selectedTextIndex.value >= 0 &&
-        selectedTextIndex.value < textWidgets.length) {
-      textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(
-        20.0,
-        200.0,
-      );
-    }
+  if (selectedTextIndex.value >= 0 &&
+      selectedTextIndex.value < textWidgets.length) {
+    textWidgets[selectedTextIndex.value].fontSize.value = size.clamp(
+      30.0, // Increased minimum from 20.0
+      200.0,
+    );
   }
+}
 
   void updateTextOpacity(double opacity) {
     if (selectedTextIndex.value >= 0 &&
